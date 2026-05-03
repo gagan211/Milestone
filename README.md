@@ -28,6 +28,10 @@ Delivery is verifiable. A developer's GitHub commits, a designer's Figma file, a
 - **Portable:** Follows the freelancer across platforms and clients
 - **Credible:** Hard to game because it requires actual work artifacts
 
+## Documentation
+- **[Frontend Guide](frontend/docs/frontend_guide.md)**: Architecture, Components, and State management.
+- **[Backend Integration](frontend/docs/backend_integration.md)**: API Contracts, Auth flow, and Background tasks.
+
 ## 3. Technology Stack
 
 - **Backend:** Rust (Axum) for performance and learning, with SQLx.
