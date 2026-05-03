@@ -27,3 +27,15 @@ target
 *DS_Store*
 docs
 
+# Node / Frontend
+node_modules/
+dist/
+dist-ssr/
+*.local
+.eslintcache
+
+# macOS
+.DS_Store
+
+# Docker / Infra
+docker-compose.override.yml
