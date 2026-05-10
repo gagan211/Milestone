@@ -8,6 +8,16 @@ pub struct HttpServer {
 
 impl HttpServer {
     pub fn new(listner: TcpListener, router: Router) -> Self {
+        use tower_http::cors::{CorsLayer, Any};
+        use axum::http::Method;
+
+        // Apply CORS middleware so cross-origin browsers can make HTTP requests
+        let cors = CorsLayer::new()
+            .allow_origin(Any)
+            .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE, Method::OPTIONS])
+            .allow_headers(Any);
+
+        let router = router.layer(cors);
         Self { listner, router }
     }
 
