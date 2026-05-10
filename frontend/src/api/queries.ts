@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { apiClient } from './client';
+// import { apiClient } from './client';
 
 export interface DashboardData {
   trustScore: number;

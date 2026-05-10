@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useDashboardData } from '../api/queries';
 import { StatCard } from '../components/dashboard/StatCard';
 import { ProjectItem } from '../components/dashboard/ProjectItem';

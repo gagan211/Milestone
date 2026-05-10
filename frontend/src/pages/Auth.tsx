@@ -1,11 +1,18 @@
-import { LogIn, Code2 } from 'lucide-react';
+import { Code2, Building2 } from 'lucide-react';
+import { supabase } from '../api/supabase';
 
 export default function Auth() {
-  const handleGithubLogin = () => {
-    // In production, this client_id should come from env
-    const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID || 'your_dev_client_id';
-    const redirectUri = window.location.origin + '/auth/callback';
-    window.location.href = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=read:user user:email`;
+  const handleLogin = async (provider: 'github' | 'google') => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+    if (error) {
+      console.error('Error logging in:', error.message);
+      alert('Failed to login. Please try again.');
+    }
   };
 
   return (
@@ -16,26 +23,30 @@ export default function Auth() {
         <div className="absolute -top-24 -right-24 w-48 h-48 bg-blue-600/20 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="flex justify-center relative">
-          <div className="p-4 bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800">
-            <Code2 className="w-10 h-10 text-blue-600" />
-          </div>
-        </div>
-
         <div className="relative">
-          <h1 className="text-2xl font-bold tracking-tight">Welcome to Milestone</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Milestone</h1>
           <p className="text-gray-500 dark:text-gray-400 mt-2 text-sm">
-            Sign in to access your developer portfolio and manage your trust score.
+            Are you looking to be hired, or are you looking to hire?
           </p>
         </div>
 
-        <button 
-          onClick={handleGithubLogin}
-          className="relative w-full flex items-center justify-center gap-3 py-3 px-4 bg-gray-900 hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100 text-white transition-all rounded-xl font-semibold shadow-lg hover:shadow-xl hover:-translate-y-0.5"
-        >
-          <Code2 className="w-5 h-5" />
-          Continue with GitHub
-        </button>
+        <div className="space-y-4">
+          <button 
+            onClick={() => handleLogin('github')}
+            className="relative w-full flex items-center justify-center gap-3 py-3 px-4 bg-gray-900 hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100 text-white transition-all rounded-xl font-semibold shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+          >
+            <Code2 className="w-5 h-5" />
+            I am a Developer (GitHub)
+          </button>
+
+          <button 
+            onClick={() => handleLogin('google')}
+            className="relative w-full flex items-center justify-center gap-3 py-3 px-4 bg-white hover:bg-gray-50 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 text-gray-900 border border-gray-200 dark:border-gray-700 transition-all rounded-xl font-semibold shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+          >
+            <Building2 className="w-5 h-5" />
+            I am a Client (Google)
+          </button>
+        </div>
 
         <p className="text-xs text-gray-500 dark:text-gray-400 relative">
           By continuing, you agree to our Terms of Service and Privacy Policy.

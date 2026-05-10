@@ -1,28 +1,21 @@
-pub mod auth;
-pub mod config;
-pub mod db;
-pub mod dto;
-pub mod error;
-pub mod handlers;
-pub mod logger;
-pub mod models;
-pub mod services;
-pub mod state;
-pub mod verification;
-
-fn on_init() {
-    // Initialization logic here
-}
-
-fn on_shut_down() {
-    // Shutdown logic here
-}
+use milestone::{on_init, on_shut_down};
 
 #[tokio::main]
 async fn main() {
-    on_init();
+    let server = match on_init().await {
+        Ok(srv) => {
+            println!("Core systems initialized successfully!");
+            srv
+        }
+        Err(e) => {
+            eprintln!("Server initialization failed: {}", e);
+            std::process::exit(1);
+        }
+    };
 
-    // Server logic will go here
-
+    if let Err(e) = server.run().await {
+        eprintln!("Server Runtime error {}", e);
+        on_shut_down();
+    }
     on_shut_down();
 }
