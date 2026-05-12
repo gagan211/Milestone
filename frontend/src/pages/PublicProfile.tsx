@@ -1,13 +1,25 @@
 import { ExternalLink, GitBranch, Star, Loader2 } from 'lucide-react';
 import { useProfileData } from '../api/queries';
+import { useParams } from 'react-router-dom';
 
 export default function PublicProfile() {
-  const { data, isLoading } = useProfileData('1'); // Mock ID
+  const { userId } = useParams<{ userId: string }>();
+  const { data, isLoading, error } = useProfileData(userId ?? '');
 
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-red-500 font-semibold p-6 glass max-w-md rounded-2xl border border-red-500/20 text-center">
+          Failed to load public profile. Please try again.
+        </div>
       </div>
     );
   }

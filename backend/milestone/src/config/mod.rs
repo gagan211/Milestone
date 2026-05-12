@@ -16,6 +16,8 @@ pub enum ConfigError {
 struct ServerConfig {
     host: String,
     port: u16,
+    base_path: String,
+    cors_allowed_origins: Vec<String>,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -71,6 +73,14 @@ impl AppConfig {
 
     pub fn server_port(&self) -> u16 {
         self.server.port
+    }
+
+    pub fn base_path(&self) -> &str {
+        &self.server.base_path
+    }
+
+    pub fn cors_allowed_origins(&self) -> &[String] {
+        &self.server.cors_allowed_origins
     }
 
     pub fn database_url(&self) -> &str {

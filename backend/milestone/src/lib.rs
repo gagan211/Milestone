@@ -35,7 +35,7 @@ pub async fn on_init() -> Result<HttpServer, Box<dyn std::error::Error + Send + 
     let state = AppState::new(config, db, jwk_set);
 
     // 5. Build our router and attach the state
-    let app: Router = app_router().with_state(state.clone());
+    let app: Router = app_router(&state.config).with_state(state.clone());
 
     // 6. Try to bind to our TCP port (fails early if the port is already taken!)
     let addr = format!(
@@ -46,7 +46,7 @@ pub async fn on_init() -> Result<HttpServer, Box<dyn std::error::Error + Send + 
     let listener = tokio::net::TcpListener::bind(&addr).await?;
 
     // 7. Create our ready server
-    let server = HttpServer::new(listener, app);
+    let server = HttpServer::new(listener, app, &state.config);
 
     Ok(server)
 }

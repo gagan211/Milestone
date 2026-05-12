@@ -7,15 +7,24 @@ pub struct HttpServer {
 }
 
 impl HttpServer {
-    pub fn new(listner: TcpListener, router: Router) -> Self {
-        use tower_http::cors::{CorsLayer, Any};
-        use axum::http::Method;
+    pub fn new(listner: TcpListener, router: Router, config: &crate::config::AppConfig) -> Self {
+        use tower_http::cors::CorsLayer;
+        use axum::http::{Method, header::HeaderValue};
 
-        // Apply CORS middleware so cross-origin browsers can make HTTP requests
-        let cors = CorsLayer::new()
-            .allow_origin(Any)
+        let mut cors = CorsLayer::new()
             .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE, Method::OPTIONS])
-            .allow_headers(Any);
+            .allow_headers(tower_http::cors::Any);
+
+        let origins = config.cors_allowed_origins();
+        if origins.iter().any(|o| o == "*") {
+            cors = cors.allow_origin(tower_http::cors::Any);
+        } else {
+            let parsed_origins: Vec<HeaderValue> = origins
+                .iter()
+                .filter_map(|o| o.parse().ok())
+                .collect();
+            cors = cors.allow_origin(parsed_origins);
+        }
 
         let router = router.layer(cors);
         Self { listner, router }

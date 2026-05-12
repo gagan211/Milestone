@@ -8,17 +8,29 @@ use jsonwebtoken::{DecodingKey, Validation, Algorithm, decode};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct UserMetadata {
+    pub avatar_url: Option<String>,
+    pub user_name: Option<String>,
+    pub preferred_username: Option<String>,
+    pub full_name: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Claims {
     pub sub: String,
     pub email: Option<String>,
     pub exp: usize,
     pub role: Option<String>,
+    pub user_metadata: Option<UserMetadata>,
 }
 
 #[derive(Debug, Clone)]
 pub struct AuthenticatedUser {
     pub user_id: String,
     pub email: Option<String>,
+    pub avatar_url: Option<String>,
+    pub github_username: Option<String>,
+    pub display_name: Option<String>,
 }
 
 #[async_trait]
@@ -70,13 +82,22 @@ impl FromRequestParts<AppState> for AuthenticatedUser {
             (
                 StatusCode::UNAUTHORIZED,
                 format!("Invalid or expired token: {}", e),
-                // To allow testing with empty db connection, returning error message
             )
         })?;
+
+        let metadata = token_data.claims.user_metadata;
+        let github_username = metadata.as_ref().and_then(|m| {
+            m.preferred_username.clone().or_else(|| m.user_name.clone())
+        });
+        let avatar_url = metadata.as_ref().and_then(|m| m.avatar_url.clone());
+        let display_name = metadata.as_ref().and_then(|m| m.full_name.clone());
 
         Ok(AuthenticatedUser {
             user_id: token_data.claims.sub,
             email: token_data.claims.email,
+            avatar_url,
+            github_username,
+            display_name,
         })
     }
 }

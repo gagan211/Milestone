@@ -1,5 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
-// import { apiClient } from './client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiClient } from './client';
+import { API_ENDPOINTS } from './endpoints';
 
 export interface DashboardData {
   trustScore: number;
@@ -18,16 +19,7 @@ export const useDashboardData = () => {
   return useQuery({
     queryKey: ['dashboard'],
     queryFn: async (): Promise<DashboardData> => {
-      // return (await apiClient.get('/dashboard')).data;
-      // Mocking for now until backend is built:
-      return new Promise(resolve => setTimeout(() => resolve({
-        role: 'developer', // Toggle to 'client' to see client view
-        trustScore: 85,
-        activeProjects: [
-          { id: '1', name: 'Web App Redesign', progress: 75, status: 'On Track', clientName: 'Acme Corp' },
-          { id: '2', name: 'Brand Strategy', progress: 40, status: 'At Risk', clientName: 'Global Inc' },
-        ]
-      }), 500));
+      return (await apiClient.get(API_ENDPOINTS.dashboard.get)).data;
     }
   });
 };
@@ -52,17 +44,9 @@ export const useProfileData = (userId: string) => {
   return useQuery({
     queryKey: ['profile', userId],
     queryFn: async (): Promise<ProfileData> => {
-      // return (await apiClient.get(`/profile/${userId}`)).data;
-      return new Promise(resolve => setTimeout(() => resolve({
-        name: 'Gagan Khivesara',
-        title: 'Full-Stack Rust & React Developer',
-        score: 85,
-        stats: { commits: 1245, stars: 42 },
-        verifiedProjects: [
-          { id: '1', name: 'Paper Trading Simulator', description: 'A real-time matching engine built in Rust with WebSockets.', stack: ['Rust', 'Tokio', 'React'] }
-        ]
-      }), 500));
-    }
+      return (await apiClient.get(API_ENDPOINTS.profile.detail(userId))).data;
+    },
+    enabled: !!userId,
   });
 };
 
@@ -74,9 +58,9 @@ export interface ProjectData {
   logs: Array<{
     id: string;
     title: string;
-    hash: string;
-    time: string;
-    verified: boolean;
+    description: string;
+    status: 'pending' | 'completed' | 'failed';
+    completedAt: string | null;
   }>;
 }
 
@@ -84,18 +68,35 @@ export const useProjectData = (projectId: string) => {
   return useQuery({
     queryKey: ['project', projectId],
     queryFn: async (): Promise<ProjectData> => {
-      // return (await apiClient.get(`/projects/${projectId}`)).data;
-      return new Promise(resolve => setTimeout(() => resolve({
-        id: projectId,
-        name: 'Paper Trading Simulator',
-        description: 'A highly concurrent matching engine with real-time websocket broadcasts and React dashboard.',
-        status: 'Completed',
-        logs: [
-          { id: '1', title: 'Core Order Matching Engine', hash: 'e3f1a9c', time: '2 days ago', verified: true },
-          { id: '2', title: 'Websocket Broadcaster', hash: '8b2c4f1', time: '5 days ago', verified: true },
-          { id: '3', title: 'Initial Project Scaffold', hash: '1a93d0f', time: '1 week ago', verified: true },
-        ]
-      }), 500));
+      return (await apiClient.get(API_ENDPOINTS.projects.detail(projectId))).data;
+    },
+    enabled: !!projectId
+  });
+};
+
+export interface AuthorizedClient {
+  id: string;
+  companyName: string;
+  contactName: string;
+}
+
+export const useAuthorizedClients = () => {
+  return useQuery({
+    queryKey: ['authorized-clients'],
+    queryFn: async (): Promise<AuthorizedClient[]> => {
+      return (await apiClient.get(API_ENDPOINTS.projects.authorizedClients)).data;
+    }
+  });
+};
+
+export const useLinkRepository = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: { repoUrl: string; clientId?: string }) => {
+      return (await apiClient.post(API_ENDPOINTS.projects.link, payload)).data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     }
   });
 };

@@ -5,7 +5,6 @@ interface StatCardProps {
   label: string;
   value: number;
   description: string;
-  role: 'developer' | 'client';
 }
 
 export const StatCard: React.FC<StatCardProps> = ({ label, value, description }) => {

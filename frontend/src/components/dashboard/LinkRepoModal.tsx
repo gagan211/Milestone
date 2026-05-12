@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Code2, Loader2, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { Glass } from '../ui/Glass';
+import { useLinkRepository, useAuthorizedClients } from '../../api/queries';
 
 interface LinkRepoModalProps {
   isOpen: boolean;
@@ -12,6 +13,9 @@ export const LinkRepoModal: React.FC<LinkRepoModalProps> = ({ isOpen, onClose, o
   const [repoUrl, setRepoUrl] = useState('');
   const [step, setStep] = useState<'input' | 'validating' | 'success' | 'error'>('input');
   const [error, setError] = useState('');
+  const [selectedClientId, setSelectedClientId] = useState('');
+  const { data: clients, isLoading: loadingClients } = useAuthorizedClients();
+  const linkRepoMutation = useLinkRepository();
 
   if (!isOpen) return null;
 
@@ -19,21 +23,23 @@ export const LinkRepoModal: React.FC<LinkRepoModalProps> = ({ isOpen, onClose, o
     setStep('validating');
     setError('');
 
-    // Mock validation: In real app, this pings the backend
-    setTimeout(() => {
-      if (repoUrl.includes('invalid')) {
-        setStep('error');
-        setError('This repository is not associated with any active client projects on Milestone.');
-      } else {
-        setStep('success');
-        setTimeout(() => {
-          onSuccess(repoUrl);
-          onClose();
-          setStep('input');
-          setRepoUrl('');
-        }, 2000);
-      }
-    }, 1500);
+    try {
+      await linkRepoMutation.mutateAsync({
+        repoUrl,
+        clientId: selectedClientId || undefined,
+      });
+      setStep('success');
+      setTimeout(() => {
+        onSuccess(repoUrl);
+        onClose();
+        setStep('input');
+        setRepoUrl('');
+        setSelectedClientId('');
+      }, 2000);
+    } catch (err: any) {
+      setStep('error');
+      setError(err.response?.data?.message || 'This repository is not associated with any active client projects on Milestone.');
+    }
   };
 
   return (
@@ -69,8 +75,29 @@ export const LinkRepoModal: React.FC<LinkRepoModalProps> = ({ isOpen, onClose, o
                 </div>
               </div>
 
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                  Assign to Client
+                </label>
+                <div className="relative">
+                  <select
+                    value={selectedClientId}
+                    onChange={(e) => setSelectedClientId(e.target.value)}
+                    disabled={loadingClients}
+                    className="w-full px-4 py-4 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl focus:ring-2 focus:ring-blue-500 transition-all outline-none appearance-none cursor-pointer text-sm"
+                  >
+                    <option value="">None / Personal Portfolio Project</option>
+                    {clients?.map((client) => (
+                      <option key={client.id} value={client.id}>
+                        {client.companyName} ({client.contactName})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
               <button
-                disabled={!repoUrl}
+                disabled={!repoUrl || linkRepoMutation.isPending}
                 onClick={handleLink}
                 className="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-600/20 active:scale-[0.98] transition-all"
               >

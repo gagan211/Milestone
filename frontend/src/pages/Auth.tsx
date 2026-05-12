@@ -2,7 +2,10 @@ import { Code2, Building2 } from 'lucide-react';
 import { supabase } from '../api/supabase';
 
 export default function Auth() {
-  const handleLogin = async (provider: 'github' | 'google') => {
+  const handleLogin = async (provider: 'github' | 'google', role: 'developer' | 'client') => {
+    // Store the intended role so we can use it in the callback
+    localStorage.setItem('intendedRole', role);
+    
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
@@ -32,7 +35,7 @@ export default function Auth() {
 
         <div className="space-y-4">
           <button 
-            onClick={() => handleLogin('github')}
+            onClick={() => handleLogin('github', 'developer')}
             className="relative w-full flex items-center justify-center gap-3 py-3 px-4 bg-gray-900 hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100 text-white transition-all rounded-xl font-semibold shadow-lg hover:shadow-xl hover:-translate-y-0.5"
           >
             <Code2 className="w-5 h-5" />
@@ -40,7 +43,7 @@ export default function Auth() {
           </button>
 
           <button 
-            onClick={() => handleLogin('google')}
+            onClick={() => handleLogin('google', 'client')}
             className="relative w-full flex items-center justify-center gap-3 py-3 px-4 bg-white hover:bg-gray-50 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 text-gray-900 border border-gray-200 dark:border-gray-700 transition-all rounded-xl font-semibold shadow-lg hover:shadow-xl hover:-translate-y-0.5"
           >
             <Building2 className="w-5 h-5" />

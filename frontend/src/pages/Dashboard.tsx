@@ -6,13 +6,23 @@ import { LinkRepoModal } from '../components/dashboard/LinkRepoModal';
 import { Loader2 } from 'lucide-react';
 
 export default function Dashboard() {
-  const { data, isLoading } = useDashboardData();
+  const { data, isLoading, error } = useDashboardData();
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
 
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-red-500 font-semibold p-6 glass max-w-md rounded-2xl border border-red-500/20 text-center">
+          Failed to load dashboard. Please try again.
+        </div>
       </div>
     );
   }
@@ -49,7 +59,6 @@ export default function Dashboard() {
             label={data.role === 'developer' ? 'Your Trust Score' : 'Overall Project Health'}
             value={data.trustScore}
             description={data.role === 'developer' ? 'Top 15% of Contributors' : 'Verified completion rate'}
-            role={data.role}
           />
 
           {/* Active Projects List */}
@@ -79,10 +88,7 @@ export default function Dashboard() {
       <LinkRepoModal 
         isOpen={isLinkModalOpen} 
         onClose={() => setIsLinkModalOpen(false)}
-        onSuccess={(url) => {
-          console.log('Linked repo:', url);
-          // In real app, we would refetch queries here
-        }}
+        onSuccess={() => setIsLinkModalOpen(false)}
       />
     </div>
   );

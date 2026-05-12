@@ -1,13 +1,25 @@
 import { CheckCircle2, ShieldAlert, GitCommit, Loader2 } from 'lucide-react';
 import { useProjectData } from '../api/queries';
+import { useParams } from 'react-router-dom';
 
 export default function ProjectDetail() {
-  const { data, isLoading } = useProjectData('1');
+  const { id } = useParams<{ id: string }>();
+  const { data, isLoading, error } = useProjectData(id ?? '');
 
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-red-500 font-semibold p-6 glass max-w-md rounded-2xl border border-red-500/20 text-center">
+          Failed to load project details. Please try again.
+        </div>
       </div>
     );
   }
@@ -57,11 +69,17 @@ export default function ProjectDetail() {
                   {i !== data.logs.length - 1 && <div className="w-px h-full bg-gray-200 dark:bg-gray-800 my-2"></div>}
                 </div>
                 <div className="pb-6">
-                  <p className="text-sm text-gray-500 dark:text-gray-400 font-mono">{log.time} - commit {log.hash}</p>
+                  {log.completedAt && <p className="text-sm text-gray-500 dark:text-gray-400 font-mono">{new Date(log.completedAt).toLocaleString()}</p>}
                   <h3 className="font-medium mt-1">{log.title}</h3>
-                  {log.verified && (
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{log.description}</p>
+                  {log.status === 'completed' && (
                     <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-1 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 rounded text-xs font-medium border border-emerald-100 dark:border-emerald-800/30">
                       <CheckCircle2 className="w-3 h-3" /> Code verified
+                    </div>
+                  )}
+                  {log.status === 'failed' && (
+                    <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-1 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded text-xs font-medium border border-red-100 dark:border-red-800/30">
+                      <ShieldAlert className="w-3 h-3" /> Verification failed
                     </div>
                   )}
                 </div>

@@ -5,8 +5,19 @@ import Auth from './pages/Auth';
 import AuthCallback from './pages/AuthCallback';
 import PublicProfile from './pages/PublicProfile';
 import ProjectDetail from './pages/ProjectDetail';
+import { ProtectedRoute } from './components/ProtectedRoute';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: (failureCount, error: any) => {
+        if ([401, 403].includes(error?.response?.status)) return false;
+        return failureCount < 2;
+      },
+      staleTime: 60_000,
+    },
+  },
+});
 
 function App() {
   return (
@@ -16,9 +27,18 @@ function App() {
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/profile" element={<PublicProfile />} />
-          <Route path="/project" element={<ProjectDetail />} />
+          <Route 
+            path="/dashboard" 
+            element={<ProtectedRoute><Dashboard /></ProtectedRoute>} 
+          />
+          <Route 
+            path="/profile/:userId" 
+            element={<ProtectedRoute><PublicProfile /></ProtectedRoute>} 
+          />
+          <Route 
+            path="/project/:id" 
+            element={<ProtectedRoute><ProjectDetail /></ProtectedRoute>} 
+          />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>

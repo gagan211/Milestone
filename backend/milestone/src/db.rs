@@ -8,8 +8,6 @@ pub enum DataBaseError {
     ConnectionFailed(#[source] sqlx::Error),
     #[error("Database Query Failed: {0}")]
     QueryFailed(#[source] sqlx::Error),
-    #[error("Failed to Run Database Migration: {0}")]
-    MigrationFailed(#[source] sqlx::migrate::MigrateError),
 }
 
 #[derive(Debug, Clone)]
@@ -20,7 +18,6 @@ pub struct Database {
 impl Database {
     pub async fn new(url: &str, max_conn: u32) -> Result<Self, DataBaseError> {
         let db = Self::connect(url, max_conn).await?;
-        // db.run_migrations().await?;
         Ok(db)
     }
 
@@ -45,14 +42,6 @@ impl Database {
             .execute(&self.pool)
             .await
             .map_err(DataBaseError::QueryFailed)?;
-        Ok(())
-    }
-
-    async fn run_migrations(&self) -> Result<(), DataBaseError> {
-        sqlx::migrate!("./migrations")
-            .run(&self.pool)
-            .await
-            .map_err(DataBaseError::MigrationFailed)?;
         Ok(())
     }
 }
