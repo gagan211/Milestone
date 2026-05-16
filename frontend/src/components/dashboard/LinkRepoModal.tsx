@@ -1,27 +1,37 @@
-import React, { useState } from 'react';
-import { X, Code2, Loader2, CheckCircle2, AlertTriangle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Code2, Loader2, CheckCircle2 } from 'lucide-react';
 import { Glass } from '../ui/Glass';
 import { useLinkRepository, useAuthorizedClients } from '../../api/queries';
+import { ApiErrorCard, type ApiError } from '../common/ApiErrorCard';
+import { useGitHubReauth } from '../../hooks/useGitHubReauth';
 
 interface LinkRepoModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: (repoUrl: string) => void;
+  initialRepoUrl?: string;
 }
 
-export const LinkRepoModal: React.FC<LinkRepoModalProps> = ({ isOpen, onClose, onSuccess }) => {
+export const LinkRepoModal: React.FC<LinkRepoModalProps> = ({ isOpen, onClose, onSuccess, initialRepoUrl }) => {
   const [repoUrl, setRepoUrl] = useState('');
   const [step, setStep] = useState<'input' | 'validating' | 'success' | 'error'>('input');
-  const [error, setError] = useState('');
+  const [apiError, setApiError] = useState<ApiError | null>(null);
   const [selectedClientId, setSelectedClientId] = useState('');
   const { data: clients, isLoading: loadingClients } = useAuthorizedClients();
   const linkRepoMutation = useLinkRepository();
+  const { reauthorize } = useGitHubReauth();
+
+  useEffect(() => {
+    if (initialRepoUrl) {
+      setRepoUrl(initialRepoUrl);
+    }
+  }, [initialRepoUrl]);
 
   if (!isOpen) return null;
 
   const handleLink = async () => {
     setStep('validating');
-    setError('');
+    setApiError(null);
 
     try {
       await linkRepoMutation.mutateAsync({
@@ -38,7 +48,14 @@ export const LinkRepoModal: React.FC<LinkRepoModalProps> = ({ isOpen, onClose, o
       }, 2000);
     } catch (err: any) {
       setStep('error');
-      setError(err.response?.data?.message || 'This repository is not associated with any active client projects on Milestone.');
+      if (err.response?.data && typeof err.response.data === 'object' && 'error' in err.response.data) {
+        setApiError(err.response.data as ApiError);
+      } else {
+        setApiError({
+          error: 'UNKNOWN',
+          message: err.response?.data?.message || err.response?.data || err.message || 'An unexpected error occurred.',
+        });
+      }
     }
   };
 
@@ -128,14 +145,18 @@ export const LinkRepoModal: React.FC<LinkRepoModalProps> = ({ isOpen, onClose, o
             </div>
           )}
 
-          {step === 'error' && (
+          {step === 'error' && apiError && (
             <div className="space-y-6">
-              <div className="p-6 bg-red-50 dark:bg-red-900/20 rounded-2xl border border-red-200 dark:border-red-800 flex flex-col items-center text-center space-y-3">
-                <AlertTriangle className="w-10 h-10 text-red-500" />
-                <p className="font-bold text-red-700 dark:text-red-400">{error}</p>
-              </div>
+              <ApiErrorCard 
+                errorObj={apiError} 
+                onReauthorize={(url) => reauthorize(url, repoUrl)}
+                onRetry={handleLink}
+              />
               <button
-                onClick={() => setStep('input')}
+                onClick={() => {
+                  setStep('input');
+                  setApiError(null);
+                }}
                 className="w-full py-4 bg-gray-100 dark:bg-gray-800 rounded-2xl font-bold hover:bg-gray-200 dark:hover:bg-gray-700 transition-all"
               >
                 Try Another Repository

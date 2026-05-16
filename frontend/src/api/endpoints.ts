@@ -6,7 +6,7 @@ export const API_ENDPOINTS = {
     get: '/projects/dashboard',
   },
   projects: {
-    link: '/projects',
+    link: '/projects/link',
     detail: (id: string) => `/projects/${id}`,
     authorizedClients: '/projects/authorized-clients',
   },

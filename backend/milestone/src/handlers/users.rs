@@ -1,7 +1,7 @@
-use crate::{auth::jwt::AuthenticatedUser, state::AppState};
 use crate::dto::auth_dto::SyncUserPayload;
 use crate::services::user_service::UserService;
-use axum::{Json, extract::State, response::IntoResponse, http::StatusCode};
+use crate::{auth::jwt::AuthenticatedUser, state::AppState};
+use axum::{Json, extract::State, http::StatusCode, response::IntoResponse};
 
 pub async fn sync_user_handler(
     State(state): State<AppState>,

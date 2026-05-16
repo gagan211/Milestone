@@ -25,19 +25,23 @@ export const useDashboardData = () => {
 };
 
 export interface ProfileData {
+  id: string;
   name: string;
   title: string;
   score: number;
   stats: {
     commits: number;
     stars: number;
+    totalMilestonesVerified: number;
+    activeProjects: number;
   };
-  verifiedProjects: Array<{
-    id: string;
-    name: string;
-    description: string;
-    stack: string[];
-  }>;
+  profile_data: {
+    layout: Array<{
+      id: string;
+      type: 'hero' | 'markdown' | 'project_showcase';
+      content?: any;
+    }>;
+  };
 }
 
 export const useProfileData = (userId: string) => {
@@ -55,12 +59,15 @@ export interface ProjectData {
   name: string;
   description: string;
   status: string;
-  logs: Array<{
+  progress: number;
+  repoUrl?: string;
+  milestones: Array<{
     id: string;
     title: string;
     description: string;
-    status: 'pending' | 'completed' | 'failed';
+    status: 'pending' | 'in_progress' | 'completed' | 'failed';
     completedAt: string | null;
+    commitHash?: string;
   }>;
 }
 
@@ -97,6 +104,19 @@ export const useLinkRepository = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+    }
+  });
+};
+
+export const useUpdateProfile = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: { profile_data: ProfileData['profile_data'] }) => {
+      // Assuming a PUT or PATCH endpoint exists at /api/profile
+      return (await apiClient.put(API_ENDPOINTS.profile.detail('me'), payload)).data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
     }
   });
 };

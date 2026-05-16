@@ -24,6 +24,8 @@ pub struct DashboardResponse {
 pub struct LinkRepoPayload {
     #[serde(rename = "repoUrl")]
     pub repo_url: String,
+    #[serde(rename = "clientId")]
+    pub client_id: Option<String>,
 }
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct MilestoneDetail {
@@ -41,4 +43,27 @@ pub struct ProjectResponse {
     pub description: Option<String>,
     pub status: String,
     pub logs: Vec<MilestoneDetail>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct GitHubRepoDetails {
+    pub id: i64,
+    pub name: String,
+    pub description: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct LinkRepoResponse {
+    pub project_id: String,
+    pub repo_name: String,
+    pub repo_owner: String,
+    pub message: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ApiError {
+    pub error: String,
+    pub message: String,
+    pub action: Option<String>,
+    pub redirect_url: Option<String>,
 }

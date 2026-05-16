@@ -1,6 +1,9 @@
-import { ExternalLink, GitBranch, Star, Loader2 } from 'lucide-react';
+import { GitBranch, Star, Loader2, Globe, Mail, MessageSquare } from 'lucide-react';
 import { useProfileData } from '../api/queries';
 import { useParams } from 'react-router-dom';
+import { ProfileRenderer } from '../components/profile/ProfileRenderer';
+import { TrustScoreGauge } from '../components/profile/TrustScoreGauge';
+import { MilestoneStats } from '../components/profile/MilestoneStats';
 
 export default function PublicProfile() {
   const { userId } = useParams<{ userId: string }>();
@@ -28,62 +31,69 @@ export default function PublicProfile() {
 
   return (
     <div className="min-h-screen pb-12">
-      {/* Banner / Header */}
-      <div className="h-64 bg-gradient-to-br from-blue-600/10 via-gray-100 dark:via-gray-900 to-gray-50 dark:to-gray-950 border-b border-gray-200 dark:border-gray-800 flex items-end p-8">
-        <div className="max-w-5xl mx-auto w-full flex items-center gap-6">
-          <div className="w-24 h-24 rounded-2xl bg-white dark:bg-gray-900 flex flex-col items-center justify-center border-2 border-blue-600 shadow-lg">
-            <span className="text-2xl font-bold text-blue-600">{data.score}</span>
-            <span className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest">Score</span>
-          </div>
-          <div>
-            <h1 className="text-4xl font-bold">{data.name}</h1>
-            <p className="text-gray-600 dark:text-gray-400 text-lg mt-1">{data.title}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="max-w-5xl mx-auto px-8 pt-8 grid grid-cols-1 md:grid-cols-3 gap-8">
+      {/* Main Content Area */}
+      <div className="max-w-7xl mx-auto px-6 pt-12 grid grid-cols-1 lg:grid-cols-12 gap-10">
         
-        {/* Left Column (Stats & Skills) */}
-        <div className="space-y-6">
-          <div className="glass rounded-xl p-6">
-            <h3 className="font-semibold mb-4 text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wider">GitHub Stats</h3>
+        {/* Left Column / Sidebar */}
+        <div className="lg:col-span-4 space-y-8">
+          
+          {/* Avatar and Basic Info */}
+          <div className="glass rounded-3xl p-8 border border-white/20 dark:border-white/10 text-center relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-br from-blue-600/20 to-purple-600/20" />
+            <div className="relative z-10 flex flex-col items-center">
+              <div className="w-32 h-32 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 border-4 border-white dark:border-gray-950 shadow-xl mb-6 flex items-center justify-center overflow-hidden">
+                <span className="text-4xl font-bold text-gray-400">
+                  {data.name.charAt(0)}
+                </span>
+              </div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{data.name}</h1>
+              <p className="text-gray-600 dark:text-gray-400 mt-2 font-medium">{data.title}</p>
+              
+              <div className="flex gap-4 mt-8">
+                <a href="#" className="p-3 bg-gray-50 dark:bg-gray-900 rounded-full hover:scale-110 transition-transform text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white border border-gray-200 dark:border-gray-800">
+                  <Globe className="w-5 h-5" />
+                </a>
+                <a href="#" className="p-3 bg-gray-50 dark:bg-gray-900 rounded-full hover:scale-110 transition-transform text-blue-600 hover:text-blue-700 border border-blue-100 dark:border-gray-800">
+                  <Mail className="w-5 h-5" />
+                </a>
+                <a href="#" className="p-3 bg-gray-50 dark:bg-gray-900 rounded-full hover:scale-110 transition-transform text-sky-500 hover:text-sky-600 border border-sky-100 dark:border-gray-800">
+                  <MessageSquare className="w-5 h-5" />
+                </a>
+              </div>
+            </div>
+          </div>
+
+          {/* Bento Stats */}
+          <TrustScoreGauge score={data.score} />
+          <MilestoneStats 
+            totalMilestonesVerified={data.stats.totalMilestonesVerified} 
+            activeProjects={data.stats.activeProjects} 
+          />
+
+          <div className="glass rounded-2xl p-6 border border-white/20 dark:border-white/10">
+            <h3 className="font-semibold mb-4 text-xs text-gray-500 dark:text-gray-400 uppercase tracking-widest">GitHub Stats</h3>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2"><GitBranch className="w-4 h-4 text-emerald-500" /> <span>Commits (1yr)</span></div>
-                <span className="font-mono font-medium">{data.stats.commits.toLocaleString()}</span>
+                <div className="flex items-center gap-3"><GitBranch className="w-4 h-4 text-emerald-500" /> <span className="font-medium text-gray-700 dark:text-gray-300">Commits (1yr)</span></div>
+                <span className="font-mono font-bold text-gray-900 dark:text-white">{data.stats.commits.toLocaleString()}</span>
               </div>
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2"><Star className="w-4 h-4 text-amber-500" /> <span>Stars Earned</span></div>
-                <span className="font-mono font-medium">{data.stats.stars.toLocaleString()}</span>
+                <div className="flex items-center gap-3"><Star className="w-4 h-4 text-amber-500" /> <span className="font-medium text-gray-700 dark:text-gray-300">Stars Earned</span></div>
+                <span className="font-mono font-bold text-gray-900 dark:text-white">{data.stats.stars.toLocaleString()}</span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Right Column (Projects & Milestones) */}
-        <div className="md:col-span-2 space-y-6">
-          <h2 className="text-2xl font-semibold mb-6 border-b border-gray-200 dark:border-gray-800 pb-2">Verified Projects</h2>
-          
-          {data.verifiedProjects.map(project => (
-            <div key={project.id} className="glass rounded-xl p-6 group cursor-pointer hover:border-blue-500/50 transition-colors">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="text-xl font-medium group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors flex items-center gap-2">
-                    {project.name} <ExternalLink className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{project.description}</p>
-                </div>
-                <span className="px-3 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50 rounded-full text-xs font-semibold">100% Verified</span>
-              </div>
-              <div className="flex gap-2">
-                {project.stack.map(tech => (
-                  <span key={tech} className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs font-mono text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700">{tech}</span>
-                ))}
-              </div>
+        {/* Right Column / Main Dynamic Content */}
+        <div className="lg:col-span-8">
+          {data.profile_data?.layout ? (
+            <ProfileRenderer layout={data.profile_data.layout} />
+          ) : (
+            <div className="py-20 text-center space-y-4">
+              <p className="text-gray-500 dark:text-gray-400">Profile layout has not been configured yet.</p>
             </div>
-          ))}
+          )}
         </div>
       </div>
     </div>

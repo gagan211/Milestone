@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useDashboardData } from '../api/queries';
 import { StatCard } from '../components/dashboard/StatCard';
 import { ProjectItem } from '../components/dashboard/ProjectItem';
@@ -8,6 +9,20 @@ import { Loader2 } from 'lucide-react';
 export default function Dashboard() {
   const { data, isLoading, error } = useDashboardData();
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
+  const [initialRepoUrl, setInitialRepoUrl] = useState('');
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (location.state?.action === 'link_repo') {
+      setIsLinkModalOpen(true);
+      if (location.state?.repoUrl) {
+        setInitialRepoUrl(location.state.repoUrl);
+      }
+      // Clear the state so it doesn't reopen on refresh
+      navigate('.', { replace: true, state: {} });
+    }
+  }, [location, navigate]);
 
   if (isLoading) {
     return (
@@ -87,8 +102,15 @@ export default function Dashboard() {
 
       <LinkRepoModal 
         isOpen={isLinkModalOpen} 
-        onClose={() => setIsLinkModalOpen(false)}
-        onSuccess={() => setIsLinkModalOpen(false)}
+        onClose={() => {
+          setIsLinkModalOpen(false);
+          setInitialRepoUrl('');
+        }}
+        onSuccess={() => {
+          setIsLinkModalOpen(false);
+          setInitialRepoUrl('');
+        }}
+        initialRepoUrl={initialRepoUrl}
       />
     </div>
   );

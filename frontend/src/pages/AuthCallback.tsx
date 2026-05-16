@@ -26,20 +26,43 @@ export default function AuthCallback() {
           if (!active) return;
           const intendedRole = localStorage.getItem('intendedRole') || 'developer';
           
+          const handleSuccessRedirect = () => {
+            const pendingLink = sessionStorage.getItem("pending_repo_link");
+            if (pendingLink) {
+              sessionStorage.removeItem("pending_repo_link");
+              navigate('/dashboard', { replace: true, state: { action: 'link_repo', repoUrl: pendingLink } });
+            } else {
+              navigate('/dashboard', { replace: true });
+            }
+          };
+          
           // Call backend to sync profile
-          await apiClient.post('/auth/sync', { role: intendedRole });
+          await apiClient.post(API_ENDPOINTS.auth.sync, { 
+            role: intendedRole,
+            githubAccessToken: session.provider_token 
+          });
           
           localStorage.removeItem('intendedRole');
-          navigate('/dashboard', { replace: true });
+          handleSuccessRedirect();
         } else {
           // Listen for session completion
           const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
             if (event === 'SIGNED_IN' && newSession && active) {
               try {
                 const intendedRole = localStorage.getItem('intendedRole') || 'developer';
-                await apiClient.post(API_ENDPOINTS.auth.sync, { role: intendedRole });
+                await apiClient.post(API_ENDPOINTS.auth.sync, { 
+                  role: intendedRole,
+                  githubAccessToken: newSession.provider_token
+                });
                 localStorage.removeItem('intendedRole');
-                navigate('/dashboard', { replace: true });
+                
+                const pendingLink = sessionStorage.getItem("pending_repo_link");
+                if (pendingLink) {
+                  sessionStorage.removeItem("pending_repo_link");
+                  navigate('/dashboard', { replace: true, state: { action: 'link_repo', repoUrl: pendingLink } });
+                } else {
+                  navigate('/dashboard', { replace: true });
+                }
               } catch (err: any) {
                 if (active) {
                   errorRef.current = true;

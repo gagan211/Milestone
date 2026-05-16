@@ -5,7 +5,12 @@ pub mod projects;
 pub mod users;
 
 use crate::{auth::jwt::AuthenticatedUser, config::AppConfig, state::AppState};
-use axum::{Json, Router, extract::State, response::IntoResponse, routing::{get, post}};
+use axum::{
+    Json, Router,
+    extract::State,
+    response::IntoResponse,
+    routing::{get, post},
+};
 use serde_json::json;
 
 pub fn app_router(config: &AppConfig) -> Router<AppState> {
@@ -17,8 +22,8 @@ pub fn app_router(config: &AppConfig) -> Router<AppState> {
     // We group all project-related endpoints (handlers to be implemented)
     let project_routes = Router::new()
         .route("/dashboard", get(projects::get_dashboard_handler))
-        .route("/:id", get(projects::get_project_handler))
-        .route("/", post(projects::link_repo_handler));
+        .route("/link", post(projects::link_repo_handler))
+        .route("/:id", get(projects::get_project_handler));
 
     // Main API router
     let api_routes = Router::new()
@@ -31,6 +36,7 @@ pub fn app_router(config: &AppConfig) -> Router<AppState> {
 }
 
 async fn health_check_handler(State(state): State<AppState>) -> impl IntoResponse {
+    println!("🔍 [BACKEND] Received Health Check request");
     if let Err(e) = state.db.health_check().await {
         eprintln!("Database health check failed {}", e);
         return "DB conn error";

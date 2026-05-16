@@ -32,6 +32,7 @@ impl UserService {
                 .bind(github_username)
                 .bind(authenticated_user.avatar_url.clone())
                 .bind(display_name)
+                .bind(payload.github_access_token)
                 .execute(pool)
                 .await?;
 

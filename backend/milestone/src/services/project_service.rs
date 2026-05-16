@@ -9,6 +9,8 @@ const GET_DEVELOPER_DASHBOARD: &str = include_str!("../../queries/get_developer_
 const GET_DEVELOPER_TRUST_SCORE: &str = include_str!("../../queries/get_developer_trust_score.sql");
 const GET_CLIENT_DASHBOARD: &str = include_str!("../../queries/get_client_dashboard.sql");
 const GET_CLIENT_TRUST_SCORE: &str = include_str!("../../queries/get_client_trust_score.sql");
+const INSERT_PROJECT: &str = include_str!("../../queries/insert_project.sql");
+const INSERT_MILESTONE: &str = include_str!("../../queries/insert_milestone.sql");
 
 pub struct ProjectService;
 
@@ -129,5 +131,73 @@ impl ProjectService {
 
         let avg_score = row.get::<f64, _>("avg_score");
         Ok(avg_score.round() as i32)
+    }
+
+    /// Persists a new project and seeds it with default milestones in a single transaction.
+    pub async fn link_repository(
+        db: &Database,
+        user_id: Uuid,
+        repo_info: &crate::verification::github::GitHubRepoInfo,
+        repo_details: &crate::dto::project_dto::GitHubRepoDetails,
+        client_id: Option<Uuid>,
+    ) -> Result<Uuid, sqlx::Error> {
+        let pool = db.get_conn();
+        
+        // 1. Check if already linked
+        let existing = sqlx::query("SELECT id FROM public.projects WHERE user_id = $1 AND github_repo_id = $2")
+            .bind(user_id)
+            .bind(repo_details.id)
+            .fetch_optional(pool)
+            .await?;
+            
+        if let Some(row) = existing {
+            return Ok(row.get("id"));
+        }
+
+        let mut tx = pool.begin().await?;
+
+        // 1. Insert the project
+        let project_id = Uuid::new_v4();
+        sqlx::query(INSERT_PROJECT)
+            .bind(project_id)
+            .bind(user_id)
+            .bind(client_id)
+            .bind(repo_details.id)
+            .bind(&repo_info.owner)
+            .bind(&repo_info.repo)
+            .bind(&repo_details.description)
+            .bind(true) // is_active
+            .execute(&mut *tx)
+            .await?;
+
+        // 2. Seed default milestones
+        let defaults = vec![
+            (
+                "Project Discovery",
+                "Initial planning, requirement gathering, and repository setup.",
+            ),
+            (
+                "Core Development",
+                "Implementation of the primary feature set and business logic.",
+            ),
+            (
+                "Final Delivery & Handover",
+                "Quality assurance, final review, and documentation hand-off.",
+            ),
+        ];
+
+        for (title, desc) in defaults {
+            sqlx::query(INSERT_MILESTONE)
+                .bind(Uuid::new_v4())
+                .bind(project_id)
+                .bind(title)
+                .bind(desc)
+                .bind("pending")
+                .execute(&mut *tx)
+                .await?;
+        }
+
+        tx.commit().await?;
+        Ok(project_id)
     }
 }

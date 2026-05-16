@@ -39,3 +39,7 @@ dist-ssr/
 
 # Docker / Infra
 docker-compose.override.yml
+
+# Agent files
+.agents/
+skills-lock.json

@@ -32,12 +32,24 @@ struct RedisConfig {
 }
 
 #[derive(Debug, Deserialize, Clone)]
+struct JwtConfig {
+    secret: String,
+    expiration_hours: u64,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+struct GitHubConfig {
+    client_id: String,
+    client_secret: String,
+    api_url: String,
+    login_url: String,
+}
+
+#[derive(Debug, Deserialize, Clone)]
 struct AuthConfig {
     jwks_url: String,
-    jwt_secret: String,
-    jwt_expiration_hours: u64,
-    github_client_id: String,
-    github_client_secret: String,
+    jwt: JwtConfig,
+    github: GitHubConfig,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -100,20 +112,29 @@ impl AppConfig {
     }
 
     pub fn jwt_secret(&self) -> &str {
-        &self.auth.jwt_secret
+        &self.auth.jwt.secret
     }
 
     pub fn jwt_expiration_hours(&self) -> u64 {
-        self.auth.jwt_expiration_hours
+        self.auth.jwt.expiration_hours
     }
 
     pub fn github_client_id(&self) -> &str {
-        &self.auth.github_client_id
+        &self.auth.github.client_id
     }
 
     pub fn github_client_secret(&self) -> &str {
-        &self.auth.github_client_secret
+        &self.auth.github.client_secret
     }
+    
+    pub fn github_api_url(&self) -> &str {
+        &self.auth.github.api_url
+    }
+
+    pub fn github_login_url(&self) -> &str {
+        &self.auth.github.login_url
+    }
+
 
     pub fn resend_api_key(&self) -> &str {
         &self.email.resend_api_key

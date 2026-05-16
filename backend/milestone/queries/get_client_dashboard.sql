@@ -5,7 +5,7 @@ SELECT
         (SELECT AVG(CASE WHEN m.status = 'completed' THEN 100.0 ELSE 0.0 END) 
          FROM milestones m WHERE m.project_id = p.id), 
         0.0
-    ) as progress,
+    )::FLOAT8 as progress,
     u.display_name as dev_name
 FROM projects p
 JOIN users u ON u.id = p.user_id
