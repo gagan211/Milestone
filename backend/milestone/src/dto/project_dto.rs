@@ -42,7 +42,7 @@ pub struct ProjectResponse {
     pub name: String,
     pub description: Option<String>,
     pub status: String,
-    pub logs: Vec<MilestoneDetail>,
+    pub milestones: Vec<MilestoneDetail>,
 }
 
 #[derive(Debug, Deserialize)]

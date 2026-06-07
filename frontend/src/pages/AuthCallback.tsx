@@ -28,9 +28,14 @@ export default function AuthCallback() {
           
           const handleSuccessRedirect = () => {
             const pendingLink = sessionStorage.getItem("pending_repo_link");
+            const redirectPath = localStorage.getItem('authRedirectPath');
+            localStorage.removeItem('authRedirectPath');
+            
             if (pendingLink) {
               sessionStorage.removeItem("pending_repo_link");
               navigate('/dashboard', { replace: true, state: { action: 'link_repo', repoUrl: pendingLink } });
+            } else if (redirectPath) {
+              navigate(redirectPath, { replace: true });
             } else {
               navigate('/dashboard', { replace: true });
             }
@@ -57,9 +62,14 @@ export default function AuthCallback() {
                 localStorage.removeItem('intendedRole');
                 
                 const pendingLink = sessionStorage.getItem("pending_repo_link");
+                const redirectPath = localStorage.getItem('authRedirectPath');
+                localStorage.removeItem('authRedirectPath');
+                
                 if (pendingLink) {
                   sessionStorage.removeItem("pending_repo_link");
                   navigate('/dashboard', { replace: true, state: { action: 'link_repo', repoUrl: pendingLink } });
+                } else if (redirectPath) {
+                  navigate(redirectPath, { replace: true });
                 } else {
                   navigate('/dashboard', { replace: true });
                 }
@@ -105,12 +115,20 @@ export default function AuthCallback() {
         <div className="text-center p-6 glass max-w-md rounded-2xl border border-red-500/20">
           <p className="font-semibold text-lg mb-2">Sync Error</p>
           <p className="text-sm text-gray-500 dark:text-gray-400">{error}</p>
-          <button 
-            onClick={() => navigate('/auth')} 
-            className="mt-6 px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-xl text-sm font-semibold transition-all"
-          >
-            Return to Login
-          </button>
+          <div className="flex gap-4 justify-center mt-6">
+            <button 
+              onClick={() => window.location.reload()} 
+              className="px-4 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white rounded-xl text-sm font-semibold transition-all"
+            >
+              Retry Sync
+            </button>
+            <button 
+              onClick={() => navigate('/auth')} 
+              className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-xl text-sm font-semibold transition-all"
+            >
+              Return to Login
+            </button>
+          </div>
         </div>
       </div>
     );

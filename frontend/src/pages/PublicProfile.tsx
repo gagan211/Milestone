@@ -1,13 +1,29 @@
+import { useState, useEffect } from 'react';
 import { GitBranch, Star, Loader2, Globe, Mail, MessageSquare } from 'lucide-react';
 import { useProfileData } from '../api/queries';
 import { useParams } from 'react-router-dom';
+import { supabase } from '../api/supabase';
 import { ProfileRenderer } from '../components/profile/ProfileRenderer';
+import { ProfileEditor } from '../components/profile/ProfileEditor';
 import { TrustScoreGauge } from '../components/profile/TrustScoreGauge';
 import { MilestoneStats } from '../components/profile/MilestoneStats';
+import Navbar from '../components/layout/Navbar';
 
 export default function PublicProfile() {
   const { userId } = useParams<{ userId: string }>();
   const { data, isLoading, error } = useProfileData(userId ?? '');
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) {
+        setCurrentUserId(data.user.id);
+      }
+    });
+  }, []);
+
+  const isOwnProfile = currentUserId === userId;
 
   if (isLoading) {
     return (
@@ -18,10 +34,21 @@ export default function PublicProfile() {
   }
 
   if (error) {
+    const isNotFound = (error as any)?.response?.status === 404;
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-red-500 font-semibold p-6 glass max-w-md rounded-2xl border border-red-500/20 text-center">
-          Failed to load public profile. Please try again.
+      <div className="min-h-screen flex flex-col items-center justify-center p-6">
+        <div className="text-center p-8 glass max-w-md w-full rounded-3xl border border-gray-200 dark:border-gray-800">
+          <div className="w-20 h-20 mx-auto bg-gray-100 dark:bg-gray-900 rounded-full flex items-center justify-center mb-6">
+            <Globe className="w-10 h-10 text-gray-400" />
+          </div>
+          <h2 className="text-2xl font-bold mb-2">
+            {isNotFound ? 'Profile Not Found' : 'Failed to Load'}
+          </h2>
+          <p className="text-gray-500 dark:text-gray-400">
+            {isNotFound 
+              ? "This developer profile doesn't exist or hasn't been set up yet." 
+              : "We encountered an error loading this profile. Please try again later."}
+          </p>
         </div>
       </div>
     );
@@ -30,7 +57,20 @@ export default function PublicProfile() {
   if (!data) return null;
 
   return (
-    <div className="min-h-screen pb-12">
+    <div className="min-h-screen bg-gray-50/50 dark:bg-black/20 pb-12">
+      <Navbar />
+      {/* Header and Toggle Edit Button */}
+      {isOwnProfile && (
+        <div className="max-w-7xl mx-auto px-6 pt-6 flex justify-end">
+          <button
+            onClick={() => setIsEditMode(!isEditMode)}
+            className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold shadow-md transition-colors"
+          >
+            {isEditMode ? 'Exit Edit Mode' : 'Edit Profile Layout'}
+          </button>
+        </div>
+      )}
+
       {/* Main Content Area */}
       <div className="max-w-7xl mx-auto px-6 pt-12 grid grid-cols-1 lg:grid-cols-12 gap-10">
         
@@ -87,7 +127,13 @@ export default function PublicProfile() {
 
         {/* Right Column / Main Dynamic Content */}
         <div className="lg:col-span-8">
-          {data.profile_data?.layout ? (
+          {isEditMode ? (
+            <ProfileEditor 
+              userId={userId ?? ''}
+              initialLayout={data.profile_data?.layout || []} 
+              onSave={() => setIsEditMode(false)}
+            />
+          ) : data.profile_data?.layout ? (
             <ProfileRenderer layout={data.profile_data.layout} />
           ) : (
             <div className="py-20 text-center space-y-4">

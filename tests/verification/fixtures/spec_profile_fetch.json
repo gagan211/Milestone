@@ -1,0 +1,53 @@
+{
+  "title": "Developer Profile Fetch & Update Endpoints",
+  "description": "Implement REST endpoints to fetch and update developer profile data. The profile layout is stored as JSONB in PostgreSQL and supports dynamic blocks (hero, markdown, project_showcase).",
+  "deliverable_type": "github_commit",
+  
+  "acceptance_criteria": [
+    "GET /api/profile/:userId returns the developer's full profile including stats and layout blocks",
+    "When :userId is 'me', the handler resolves the authenticated user's UUID from the JWT token",
+    "GET returns HTTP 401 if 'me' is requested without authentication",
+    "GET returns HTTP 404 if the profile does not exist in the database",
+    "PUT /api/profile/:userId requires a valid JWT and updates the profile_data JSONB column",
+    "PUT returns the fully updated profile in the response body (read-after-write pattern)",
+    "All database queries use include_str!() to load from .sql files",
+    "Handlers delegate business logic to the UserService (no raw SQL in handlers)",
+    "All error cases return appropriate HTTP status codes with descriptive messages"
+  ],
+
+  "tech_constraints": {
+    "language": "rust",
+    "framework": "axum",
+    "database": "postgresql",
+    "architecture_notes": "Handlers in src/handlers/, services in src/services/, DTOs in src/dto/, SQL in queries/"
+  },
+
+  "anti_patterns": [
+    "Must NOT return hardcoded/static JSON responses",
+    "Must NOT use unwrap() without fallback on user-facing paths",
+    "Must NOT put database query logic directly in handler functions"
+  ],
+
+  "sub_features": [
+    {
+      "name": "GET /api/profile/:userId",
+      "required": true,
+      "criteria": [
+        "Resolves 'me' keyword to authenticated user UUID",
+        "Fetches profile from PostgreSQL via UserService",
+        "Returns 404 for missing profiles",
+        "Returns structured ProfileResponse JSON"
+      ]
+    },
+    {
+      "name": "PUT /api/profile/:userId",
+      "required": true,
+      "criteria": [
+        "Requires valid JWT authentication",
+        "Accepts UpdateProfilePayload JSON body",
+        "Persists profile_data to JSONB column in users table",
+        "Returns the updated profile after saving (read-after-write)"
+      ]
+    }
+  ]
+}

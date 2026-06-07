@@ -1,0 +1,30 @@
+diff --git a/backend/milestone/src/handlers/profile.rs b/backend/milestone/src/handlers/profile.rs
+new file mode 100644
+--- /dev/null
++++ b/backend/milestone/src/handlers/profile.rs
+@@ -0,0 +1,22 @@
++use axum::{Json, response::IntoResponse};
++use serde_json::json;
++
++/// Quick implementation — hardcoded for now, will connect DB later
++pub async fn get_profile_handler() -> impl IntoResponse {
++    Json(json!({
++        "id": "00000000-0000-0000-0000-000000000000",
++        "name": "Mock Developer",
++        "title": "Full-Stack Developer",
++        "score": 100,
++        "stats": {
++            "commits": 42,
++            "stars": 10,
++            "totalMilestonesVerified": 5,
++            "activeProjects": 2
++        },
++        "profile_data": {
++            "layout": []
++        }
++    }))
++}
++
++pub async fn update_profile_handler() -> impl IntoResponse {
++    Json(json!({"status": "ok", "message": "profile updated"}))
++}

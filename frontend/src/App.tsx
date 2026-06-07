@@ -6,6 +6,7 @@ import AuthCallback from './pages/AuthCallback';
 import PublicProfile from './pages/PublicProfile';
 import ProjectDetail from './pages/ProjectDetail';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { Toaster } from 'sonner';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -22,6 +23,7 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
+      <Toaster position="top-right" richColors />
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
@@ -33,7 +35,7 @@ function App() {
           />
           <Route 
             path="/profile/:userId" 
-            element={<ProtectedRoute><PublicProfile /></ProtectedRoute>} 
+            element={<PublicProfile />} 
           />
           <Route 
             path="/project/:id" 

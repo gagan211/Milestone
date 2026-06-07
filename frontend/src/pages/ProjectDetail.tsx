@@ -1,7 +1,8 @@
-import { CheckCircle2, Loader2, ExternalLink, Code2 } from 'lucide-react';
+import { CheckCircle2, Loader2, ExternalLink, Code2, ArrowLeft } from 'lucide-react';
 import { useProjectData } from '../api/queries';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { ProjectTimeline } from '../components/dashboard/ProjectTimeline';
+import Navbar from '../components/layout/Navbar';
 
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>();
@@ -28,15 +29,20 @@ export default function ProjectDetail() {
   if (!data) return null;
 
   return (
-    <div className="min-h-screen p-8">
-      <div className="max-w-5xl mx-auto space-y-8">
+    <div className="min-h-screen bg-gray-50/50 dark:bg-black/20 pb-12">
+      <Navbar />
+      <div className="max-w-5xl mx-auto p-8 space-y-8">
         
         {/* Header */}
         <div>
-          <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400 mb-4">
-            <span>Projects</span>
-            <span>/</span>
-            <span className="text-blue-600 font-medium">{data.name}</span>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
+              <Link to="/dashboard" className="flex items-center gap-1 hover:text-gray-900 dark:hover:text-white transition-colors">
+                <ArrowLeft className="w-4 h-4" /> Dashboard
+              </Link>
+              <span>/</span>
+              <span className="text-blue-600 font-medium truncate max-w-[200px]">{data.name}</span>
+            </div>
           </div>
           <div className="flex flex-col md:flex-row justify-between items-start gap-4">
             <div>

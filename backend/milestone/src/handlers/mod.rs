@@ -1,6 +1,7 @@
 pub mod billing;
 pub mod integrations;
 pub mod milestones;
+pub mod profile;
 pub mod projects;
 pub mod users;
 
@@ -25,11 +26,17 @@ pub fn app_router(config: &AppConfig) -> Router<AppState> {
         .route("/link", post(projects::link_repo_handler))
         .route("/:id", get(projects::get_project_handler));
 
+    let profile_routes = Router::new().route(
+        "/:userID",
+        get(profile::get_profile_handler).put(profile::update_profile_handler),
+    );
+
     // Main API router
     let api_routes = Router::new()
         .route("/health", get(health_check_handler))
         .nest("/auth", auth_routes)
-        .nest("/projects", project_routes);
+        .nest("/projects", project_routes)
+        .nest("/profile", profile_routes);
 
     // Nest the API router under the dynamically configured base path
     Router::new().nest(config.base_path(), api_routes)

@@ -1,0 +1,57 @@
+diff --git a/backend/milestone/src/handlers/profile.rs b/backend/milestone/src/handlers/profile.rs
+new file mode 100644
+--- /dev/null
++++ b/backend/milestone/src/handlers/profile.rs
+@@ -0,0 +1,50 @@
++use crate::auth::jwt::AuthenticatedUser;
++use crate::services::user_service::UserService;
++use crate::state::AppState;
++
++use axum::{
++    Json,
++    extract::{Path, State},
++    http::StatusCode,
++    response::IntoResponse,
++};
++use uuid::Uuid;
++
++fn resolve_user_id(
++    user_id_str: &str,
++    user: Option<AuthenticatedUser>,
++) -> Result<Uuid, (StatusCode, &'static str)> {
++    if user_id_str == "me" {
++        match user {
++            Some(u) => Uuid::parse_str(&u.user_id)
++                .map_err(|_| (StatusCode::BAD_REQUEST, "Invalid authenticated User ID")),
++            None => Err((StatusCode::UNAUTHORIZED, "Sign in to view your profile")),
++        }
++    } else {
++        Uuid::parse_str(user_id_str)
++            .map_err(|_| (StatusCode::BAD_REQUEST, "Invalid User ID format"))
++    }
++}
++
++pub async fn get_profile_handler(
++    State(state): State<AppState>,
++    Path(user_id_str): Path<String>,
++    user: Option<AuthenticatedUser>,
++) -> impl IntoResponse {
++    let resolved_id = match resolve_user_id(&user_id_str, user) {
++        Ok(uid) => uid,
++        Err((status, msg)) => return (status, msg).into_response(),
++    };
++
++    match UserService::get_profile_by_id(&state.db, resolved_id).await {
++        Ok(Some(profile)) => Json(profile).into_response(),
++        Ok(None) => (StatusCode::NOT_FOUND, "Profile not found").into_response(),
++        Err(e) => {
++            eprintln!("Failed to fetch profile: {:?}", e);
++            (StatusCode::INTERNAL_SERVER_ERROR, "Internal server error").into_response()
++        }
++    }
++}
++
++/// TODO: Implement update handler
++pub async fn update_profile_handler() -> impl IntoResponse {
++    (StatusCode::NOT_IMPLEMENTED, "Update not implemented yet")
++}

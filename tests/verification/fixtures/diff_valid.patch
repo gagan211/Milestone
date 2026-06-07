@@ -1,0 +1,213 @@
+diff --git a/backend/milestone/src/dto/profile_dto.rs b/backend/milestone/src/dto/profile_dto.rs
+new file mode 100644
+--- /dev/null
++++ b/backend/milestone/src/dto/profile_dto.rs
+@@ -0,0 +1,30 @@
++use serde::{Deserialize, Serialize};
++
++#[derive(Debug, Serialize, Deserialize, Clone)]
++pub struct ProfileStats {
++    pub commits: i32,
++    pub stars: i32,
++    #[serde(rename = "totalMilestonesVerified")]
++    pub total_milestones_verified: i32,
++    #[serde(rename = "activeProjects")]
++    pub active_projects: i32,
++}
++
++#[derive(Debug, Serialize, Deserialize, Clone)]
++pub struct ProfileLayoutBlock {
++    pub id: String,
++    #[serde(rename = "type")]
++    pub block_type: String,
++    pub content: serde_json::Value,
++}
++
++#[derive(Debug, Serialize, Deserialize, Clone)]
++pub struct ProfileLayoutData {
++    pub layout: Vec<ProfileLayoutBlock>,
++}
++
++#[derive(Debug, Serialize, Deserialize, Clone)]
++pub struct ProfileResponse {
++    pub id: String,
++    pub name: String,
++    pub title: String,
++    pub score: i32,
++    pub stats: ProfileStats,
++    pub profile_data: ProfileLayoutData,
++}
++
++#[derive(Debug, Deserialize, Clone)]
++pub struct UpdateProfilePayload {
++    pub profile_data: ProfileLayoutData,
++}
+diff --git a/backend/milestone/src/handlers/mod.rs b/backend/milestone/src/handlers/mod.rs
+--- a/backend/milestone/src/handlers/mod.rs
++++ b/backend/milestone/src/handlers/mod.rs
+@@ -1,5 +1,6 @@
+ pub mod billing;
+ pub mod integrations;
+ pub mod milestones;
++pub mod profile;
+ pub mod projects;
+ pub mod users;
+@@ -28,9 +29,15 @@
++    let profile_routes = Router::new().route(
++        "/:userId",
++        get(profile::get_profile_handler).put(profile::update_profile_handler),
++    );
++
+     let api_routes = Router::new()
+         .route("/health", get(health_check_handler))
+         .nest("/auth", auth_routes)
+-        .nest("/projects", project_routes);
++        .nest("/projects", project_routes)
++        .nest("/profile", profile_routes);
+diff --git a/backend/milestone/src/handlers/profile.rs b/backend/milestone/src/handlers/profile.rs
+new file mode 100644
+--- /dev/null
++++ b/backend/milestone/src/handlers/profile.rs
+@@ -0,0 +1,83 @@
++use crate::auth::jwt::AuthenticatedUser;
++use crate::dto::profile_dto::UpdateProfilePayload;
++use crate::services::user_service::UserService;
++use crate::state::AppState;
++
++use axum::{
++    Json,
++    extract::{Path, State},
++    http::StatusCode,
++    response::IntoResponse,
++};
++use uuid::Uuid;
++
++fn resolve_user_id(
++    user_id_str: &str,
++    user: Option<AuthenticatedUser>,
++) -> Result<Uuid, (StatusCode, &'static str)> {
++    if user_id_str == "me" {
++        match user {
++            Some(u) => Uuid::parse_str(&u.user_id)
++                .map_err(|_| (StatusCode::BAD_REQUEST, "Invalid authenticated User ID")),
++            None => Err((StatusCode::UNAUTHORIZED, "Sign in to view your profile")),
++        }
++    } else {
++        Uuid::parse_str(user_id_str)
++            .map_err(|_| (StatusCode::BAD_REQUEST, "Invalid User ID format"))
++    }
++}
++
++pub async fn get_profile_handler(
++    State(state): State<AppState>,
++    Path(user_id_str): Path<String>,
++    user: Option<AuthenticatedUser>,
++) -> impl IntoResponse {
++    let resolved_id = match resolve_user_id(&user_id_str, user) {
++        Ok(uid) => uid,
++        Err((status, msg)) => return (status, msg).into_response(),
++    };
++
++    match UserService::get_profile_by_id(&state.db, resolved_id).await {
++        Ok(Some(profile)) => Json(profile).into_response(),
++        Ok(None) => (StatusCode::NOT_FOUND, "Profile not found").into_response(),
++        Err(e) => {
++            eprintln!("Failed to fetch profile: {:?}", e);
++            (StatusCode::INTERNAL_SERVER_ERROR, "Internal server error").into_response()
++        }
++    }
++}
++
++pub async fn update_profile_handler(
++    State(state): State<AppState>,
++    user: AuthenticatedUser,
++    Json(payload): Json<UpdateProfilePayload>,
++) -> impl IntoResponse {
++    let user_uuid = match Uuid::parse_str(&user.user_id) {
++        Ok(uid) => uid,
++        Err(_) => return (StatusCode::BAD_REQUEST, "Invalid User ID format").into_response(),
++    };
++
++    if let Err(e) = UserService::update_profile_data(&state.db, user_uuid, payload).await {
++        eprintln!("Failed to update profile: {:?}", e);
++        return (StatusCode::INTERNAL_SERVER_ERROR, "Failed to update profile").into_response();
++    }
++
++    match UserService::get_profile_by_id(&state.db, user_uuid).await {
++        Ok(Some(profile)) => Json(profile).into_response(),
++        Ok(None) => (StatusCode::NOT_FOUND, "Profile not found").into_response(),
++        Err(e) => {
++            eprintln!("Failed to fetch updated profile: {:?}", e);
++            (StatusCode::INTERNAL_SERVER_ERROR, "Internal server error").into_response()
++        }
++    }
++}
+diff --git a/backend/milestone/src/services/user_service.rs b/backend/milestone/src/services/user_service.rs
+--- a/backend/milestone/src/services/user_service.rs
++++ b/backend/milestone/src/services/user_service.rs
+@@ -4,6 +4,10 @@
++use crate::dto::profile_dto::{
++    ProfileLayoutData, ProfileResponse, ProfileStats, UpdateProfilePayload,
++};
+ const SYNC_DEVELOPER_SQL: &str = include_str!("../../queries/sync_developer.sql");
+ const SYNC_CLIENT_SQL: &str = include_str!("../../queries/sync_client.sql");
++const GET_DEVELOPER_PROFILE: &str = include_str!("../../queries/get_developer_profile_full.sql");
++const UPDATE_DEVELOPER_PROFILE: &str = include_str!("../../queries/update_developer_profile.sql");
+ pub struct UserService;
+@@ -66,4 +70,50 @@
++    pub async fn get_profile_by_id(
++        db: &Database,
++        user_id: Uuid,
++    ) -> Result<Option<ProfileResponse>, sqlx::Error> {
++        let pool = db.get_conn();
++        let row = sqlx::query(GET_DEVELOPER_PROFILE)
++            .bind(user_id)
++            .fetch_optional(pool)
++            .await?;
++        if let Some(r) = row {
++            use sqlx::Row;
++            let profile_data_val: serde_json::Value = r.try_get("profile_data").unwrap_or_default();
++            let profile_stats_val: serde_json::Value = r.try_get("profile_stats").unwrap_or_default();
++            let profile_layout: ProfileLayoutData = serde_json::from_value(profile_data_val)
++                .unwrap_or_else(|_| ProfileLayoutData { layout: vec![] });
++            let stats: ProfileStats = serde_json::from_value(profile_stats_val)
++                .unwrap_or_else(|_| ProfileStats {
++                    commits: 0, stars: 0, total_milestones_verified: 0, active_projects: 0,
++                });
++            let name: String = r.try_get("display_name").unwrap_or_else(|_| "Developer".to_string());
++            let title: String = r.try_get("skills").unwrap_or_else(|_| "Full-Stack Developer".to_string());
++            let score_f: f64 = r.try_get("trust_score").unwrap_or(100.0);
++            let score = score_f.round() as i32;
++            Ok(Some(ProfileResponse {
++                id: user_id.to_string(),
++                name, title, score, stats,
++                profile_data: profile_layout,
++            }))
++        } else {
++            Ok(None)
++        }
++    }
++
++    pub async fn update_profile_data(
++        db: &Database,
++        user_id: Uuid,
++        payload: UpdateProfilePayload,
++    ) -> Result<(), sqlx::Error> {
++        let pool = db.get_conn();
++        let profile_json = serde_json::to_value(&payload.profile_data).unwrap_or_default();
++        sqlx::query(UPDATE_DEVELOPER_PROFILE)
++            .bind(profile_json)
++            .bind(user_id)
++            .execute(pool)
++            .await?;
++        Ok(())
++    }
+diff --git a/backend/milestone/queries/update_developer_profile.sql b/backend/milestone/queries/update_developer_profile.sql
+new file mode 100644
+--- /dev/null
++++ b/backend/milestone/queries/update_developer_profile.sql
+@@ -0,0 +1,4 @@
++UPDATE users
++SET profile_data = $1,
++    updated_at = NOW()
++WHERE id = $2;

@@ -11,5 +11,5 @@ SELECT
     m.completed_at::text as milestone_completed_at
 FROM projects p
 LEFT JOIN milestones m ON m.project_id = p.id
-WHERE p.id = $1
+WHERE p.id = $1 AND p.user_id = $2
 ORDER BY m.created_at ASC;

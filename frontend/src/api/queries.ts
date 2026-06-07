@@ -12,6 +12,7 @@ export interface DashboardData {
     status: string;
     clientName?: string;
     devName?: string;
+    verificationStatus?: 'pending' | 'verified' | 'failed';
   }>;
 }
 
@@ -65,9 +66,10 @@ export interface ProjectData {
     id: string;
     title: string;
     description: string;
-    status: 'pending' | 'in_progress' | 'completed' | 'failed';
+    status: 'pending' | 'in_progress' | 'verified' | 'failed';
     completedAt: string | null;
     commitHash?: string;
+    dueDate?: string;
   }>;
 }
 
@@ -77,7 +79,8 @@ export const useProjectData = (projectId: string) => {
     queryFn: async (): Promise<ProjectData> => {
       return (await apiClient.get(API_ENDPOINTS.projects.detail(projectId))).data;
     },
-    enabled: !!projectId
+    enabled: !!projectId,
+    refetchInterval: 30_000,
   });
 };
 
@@ -108,15 +111,19 @@ export const useLinkRepository = () => {
   });
 };
 
-export const useUpdateProfile = () => {
+export const useUpdateProfile = (userId?: string) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (payload: { profile_data: ProfileData['profile_data'] }) => {
       // Assuming a PUT or PATCH endpoint exists at /api/profile
       return (await apiClient.put(API_ENDPOINTS.profile.detail('me'), payload)).data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['profile'] });
+    onSuccess: (data) => {
+      if (userId) {
+        queryClient.setQueryData(['profile', userId], data);
+      } else {
+        queryClient.invalidateQueries({ queryKey: ['profile'] });
+      }
     }
   });
 };

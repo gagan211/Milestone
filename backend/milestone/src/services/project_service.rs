@@ -1,5 +1,5 @@
 use crate::db::Database;
-use crate::dto::project_dto::{DashboardResponse, ProjectProgress};
+use crate::dto::project_dto::{DashboardResponse, ProjectProgress, ProjectResponse, MilestoneDetail};
 use sqlx::{Pool, Postgres, Row};
 use uuid::Uuid;
 
@@ -11,6 +11,7 @@ const GET_CLIENT_DASHBOARD: &str = include_str!("../../queries/get_client_dashbo
 const GET_CLIENT_TRUST_SCORE: &str = include_str!("../../queries/get_client_trust_score.sql");
 const INSERT_PROJECT: &str = include_str!("../../queries/insert_project.sql");
 const INSERT_MILESTONE: &str = include_str!("../../queries/insert_milestone.sql");
+const GET_PROJECT_TIMELINE: &str = include_str!("../../queries/get_project_timeline.sql");
 
 pub struct ProjectService;
 
@@ -199,5 +200,51 @@ impl ProjectService {
 
         tx.commit().await?;
         Ok(project_id)
+    }
+
+    /// Fetches details for a specific project, validating that it belongs to the user
+    pub async fn get_project_details(
+        db: &Database,
+        project_id: Uuid,
+        user_id: Uuid,
+    ) -> Result<Option<ProjectResponse>, sqlx::Error> {
+        let pool = db.get_conn();
+        let rows = sqlx::query(GET_PROJECT_TIMELINE)
+            .bind(project_id)
+            .bind(user_id)
+            .fetch_all(pool)
+            .await?;
+
+        if rows.is_empty() {
+            return Ok(None);
+        }
+
+        let first_row = &rows[0];
+        let id: String = first_row.get("id");
+        let name: String = first_row.get("name");
+        let description: Option<String> = first_row.get("description");
+        let is_active: bool = first_row.get("is_active");
+        let status = if is_active { "Active".to_string() } else { "Inactive".to_string() };
+
+        let mut milestones = Vec::new();
+        for row in rows {
+            if let Some(m_id) = row.get::<Option<String>, _>("milestone_id") {
+                milestones.push(MilestoneDetail {
+                    id: m_id,
+                    title: row.get("milestone_title"),
+                    description: row.get("milestone_description"),
+                    status: row.get("milestone_status"),
+                    completed_at: row.get("milestone_completed_at"),
+                });
+            }
+        }
+
+        Ok(Some(ProjectResponse {
+            id,
+            name,
+            description,
+            status,
+            milestones,
+        }))
     }
 }

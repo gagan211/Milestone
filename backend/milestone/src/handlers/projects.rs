@@ -37,11 +37,32 @@ pub async fn get_dashboard_handler(
 }
 
 pub async fn get_project_handler(
-    State(_state): State<AppState>,
-    Path(_id): Path<String>,
-    _user: AuthenticatedUser,
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+    user: AuthenticatedUser,
 ) -> impl IntoResponse {
-    (StatusCode::NOT_IMPLEMENTED, "Not implemented yet").into_response()
+    let project_uuid = match Uuid::parse_str(&id) {
+        Ok(uuid) => uuid,
+        Err(e) => {
+            return (StatusCode::BAD_REQUEST, format!("Invalid project ID: {}", e)).into_response();
+        }
+    };
+
+    let user_uuid = match Uuid::parse_str(&user.user_id) {
+        Ok(uuid) => uuid,
+        Err(e) => {
+            return (StatusCode::BAD_REQUEST, format!("Invalid user ID: {}", e)).into_response();
+        }
+    };
+
+    match ProjectService::get_project_details(&state.db, project_uuid, user_uuid).await {
+        Ok(Some(project)) => Json(project).into_response(),
+        Ok(None) => (StatusCode::NOT_FOUND, "Project not found").into_response(),
+        Err(e) => {
+            eprintln!("Failed to get project details: {:?}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, "Internal server error").into_response()
+        }
+    }
 }
 
 pub async fn link_repo_handler(

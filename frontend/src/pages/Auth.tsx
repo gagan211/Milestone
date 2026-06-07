@@ -1,10 +1,19 @@
 import { Code2, Building2 } from 'lucide-react';
 import { supabase } from '../api/supabase';
+import { useLocation } from 'react-router-dom';
+import { toast } from 'sonner';
 
 export default function Auth() {
+  const location = useLocation();
+
   const handleLogin = async (provider: 'github' | 'google', role: 'developer' | 'client') => {
     // Store the intended role so we can use it in the callback
     localStorage.setItem('intendedRole', role);
+    
+    // Store redirect path if it exists
+    if (location.state?.from) {
+      localStorage.setItem('authRedirectPath', location.state.from);
+    }
     
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
@@ -14,7 +23,7 @@ export default function Auth() {
     });
     if (error) {
       console.error('Error logging in:', error.message);
-      alert('Failed to login. Please try again.');
+      toast.error('Failed to login. Please try again.');
     }
   };
 

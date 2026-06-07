@@ -18,7 +18,7 @@ export const ProjectTimeline: React.FC<ProjectTimelineProps> = ({ milestones }) 
             {/* Status Node */}
             <div className="absolute -left-6 flex h-full items-start justify-center pt-1.5">
               <div className="z-10 bg-white dark:bg-gray-950 p-1">
-                {milestone.status === 'completed' && (
+                {milestone.status === 'verified' && (
                   <CheckCircle2 className="w-5 h-5 text-emerald-500 fill-emerald-100 dark:fill-emerald-900/30" />
                 )}
                 {milestone.status === 'in_progress' && (
@@ -39,14 +39,14 @@ export const ProjectTimeline: React.FC<ProjectTimelineProps> = ({ milestones }) 
             {/* Content */}
             <div className={`flex-1 glass p-5 rounded-2xl border transition-colors ${
               milestone.status === 'in_progress' ? 'border-blue-500/30 bg-blue-500/5' :
-              milestone.status === 'completed' ? 'border-emerald-500/20' :
+              milestone.status === 'verified' ? 'border-emerald-500/20' :
               milestone.status === 'failed' ? 'border-red-500/20 bg-red-500/5' :
               'border-gray-200 dark:border-gray-800'
             }`}>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
                 <h3 className={`font-bold text-lg ${
                   milestone.status === 'in_progress' ? 'text-blue-700 dark:text-blue-400' :
-                  milestone.status === 'completed' ? 'text-gray-900 dark:text-gray-100' :
+                  milestone.status === 'verified' ? 'text-gray-900 dark:text-gray-100' :
                   'text-gray-500 dark:text-gray-400'
                 }`}>
                   {milestone.title}
@@ -68,7 +68,7 @@ export const ProjectTimeline: React.FC<ProjectTimelineProps> = ({ milestones }) 
                   <Loader2 className="w-4 h-4 animate-spin" /> Verifying Code...
                 </div>
               )}
-              {milestone.status === 'completed' && milestone.commitHash && (
+              {milestone.status === 'verified' && milestone.commitHash && (
                 <a 
                   href={`#`} // In a real app, link to the commit
                   className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-300 rounded-lg text-sm font-mono"
