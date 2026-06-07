@@ -89,7 +89,7 @@ export default function ProjectDetail() {
           <h2 className="text-2xl font-bold mb-8 flex items-center gap-3 border-b border-gray-200 dark:border-gray-800 pb-4">
             Project Milestones
           </h2>
-          <ProjectTimeline milestones={data.milestones} />
+          <ProjectTimeline milestones={data.milestones} projectId={data.id} />
         </div>
       </div>
     </div>

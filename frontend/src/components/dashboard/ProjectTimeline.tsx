@@ -1,12 +1,14 @@
 import React from 'react';
-import { CheckCircle2, CircleDashed, Loader2, GitCommit, ShieldAlert } from 'lucide-react';
+import { CheckCircle2, CircleDashed, Loader2, GitCommit, ShieldAlert, MessageSquareText } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import type { ProjectData } from '../../api/queries';
 
 interface ProjectTimelineProps {
   milestones: ProjectData['milestones'];
+  projectId: string;
 }
 
-export const ProjectTimeline: React.FC<ProjectTimelineProps> = ({ milestones }) => {
+export const ProjectTimeline: React.FC<ProjectTimelineProps> = ({ milestones, projectId }) => {
   return (
     <div className="relative pl-6">
       {/* Vertical Dashed Line */}
@@ -62,20 +64,30 @@ export const ProjectTimeline: React.FC<ProjectTimelineProps> = ({ milestones }) 
                 {milestone.description}
               </p>
 
-              {/* Status Specific Badges */}
-              {milestone.status === 'in_progress' && (
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-lg text-sm font-semibold">
-                  <Loader2 className="w-4 h-4 animate-spin" /> Verifying Code...
-                </div>
-              )}
-              {milestone.status === 'verified' && milestone.commitHash && (
-                <a 
-                  href={`#`} // In a real app, link to the commit
-                  className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-300 rounded-lg text-sm font-mono"
+              {/* Status Specific Badges & Action Links */}
+              <div className="flex flex-wrap items-center gap-3">
+                {milestone.status === 'in_progress' && (
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-lg text-sm font-semibold">
+                    <Loader2 className="w-4 h-4 animate-spin" /> Verifying Code...
+                  </div>
+                )}
+                {milestone.status === 'verified' && milestone.commitHash && (
+                  <a 
+                    href={`#`} // In a real app, link to the commit
+                    className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-300 rounded-lg text-sm font-mono"
+                  >
+                    <GitCommit className="w-4 h-4" /> {milestone.commitHash.slice(0, 7)}
+                  </a>
+                )}
+                
+                <Link
+                  to={`/projects/${projectId}/milestones/${milestone.id}/chat`}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/45 dark:text-indigo-400 rounded-lg text-sm font-semibold border border-indigo-100 dark:border-indigo-900/20 transition-all shadow-sm"
                 >
-                  <GitCommit className="w-4 h-4" /> {milestone.commitHash.slice(0, 7)}
-                </a>
-              )}
+                  <MessageSquareText className="w-4.5 h-4.5" />
+                  <span>Negotiate Spec</span>
+                </Link>
+              </div>
             </div>
           </div>
         ))}

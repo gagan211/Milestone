@@ -12,5 +12,8 @@ export const API_ENDPOINTS = {
   },
   profile: {
     detail: (userId: string) => `/profile/${userId}`,
+  },
+  milestones: {
+    chat: (projectId: string, milestoneId: string) => `/projects/${projectId}/milestones/${milestoneId}/chat`,
   }
 };

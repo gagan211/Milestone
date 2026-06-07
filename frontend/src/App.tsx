@@ -5,6 +5,7 @@ import Auth from './pages/Auth';
 import AuthCallback from './pages/AuthCallback';
 import PublicProfile from './pages/PublicProfile';
 import ProjectDetail from './pages/ProjectDetail';
+import MilestoneChat from './pages/MilestoneChat';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Toaster } from 'sonner';
 
@@ -40,6 +41,10 @@ function App() {
           <Route 
             path="/project/:id" 
             element={<ProtectedRoute><ProjectDetail /></ProtectedRoute>} 
+          />
+          <Route 
+            path="/projects/:projectId/milestones/:milestoneId/chat" 
+            element={<ProtectedRoute><MilestoneChat /></ProtectedRoute>} 
           />
         </Routes>
       </BrowserRouter>

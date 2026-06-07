@@ -23,7 +23,7 @@ export default function PublicProfile() {
     });
   }, []);
 
-  const isOwnProfile = currentUserId === userId;
+  const isOwnProfile = currentUserId === userId || (userId === 'me' && currentUserId !== null);
 
   if (isLoading) {
     return (
